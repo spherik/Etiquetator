@@ -37,15 +37,17 @@ private:
     vector<ofSpherePrimitive> _verticesSpheres;
     //void list_hits(GLint hits, GLuint *buffer);
     int glSelect(int x, int y);
+    vector<ofPoint> findShortestPath(ofPoint, ofPoint);
     
-    ofTexture 		texColor;
+    ofTexture texColor;
     
-    int 			w, h;
+    int w, h;
     
     unsigned char 	* colorPixels;
     ofColor materialColor;
-    ofPoint _lastPoint;
     ofMaterial material;
     BBox bbox;
     ofCamera testCam;
+
+    bool _useRamanan;
 };
