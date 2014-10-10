@@ -11,7 +11,7 @@ Etiquetator is a program to set texture coordinates to a mesh. It's based on ope
 Setup:
 
 1. `cd $YOUR_OF_DIR/apps/myApps`
-1. `git clone git@github.com:spherik/Etiquetator.git && cd Etiquetator`
+1. `git clone https://github.com/spherik/Etiquetator.git && cd Etiquetator`
 1. `make && make run`
 
 
