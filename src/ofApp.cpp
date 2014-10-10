@@ -11,9 +11,9 @@ void ofApp::setup(){
     _useRamanan = false;
     
     // Load image
-    //_path = "/Users/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
+    _path = "/Users/spherik//Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/home/spherik/Documents/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
-    _path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj";
+    //_path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj";
     string imageFilename = _path;
     
     ofStringReplace(imageFilename, "originals", "images");
