@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>FA0E4762-01E7-48A3-ACEA-06CAE2579EAD</string>
+	<key>IDESourceControlProjectName</key>
+	<string>Etiquetator</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>D496AC6628390C6DB4D5863B58D6A677C6B853B2</key>
+		<string>https://github.com/spherik/Etiquetator.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Etiquetator.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>D496AC6628390C6DB4D5863B58D6A677C6B853B2</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/spherik/Etiquetator.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>D496AC6628390C6DB4D5863B58D6A677C6B853B2</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>D496AC6628390C6DB4D5863B58D6A677C6B853B2</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Etiquetator</string>
+		</dict>
+	</array>
+</dict>
+</plist>
