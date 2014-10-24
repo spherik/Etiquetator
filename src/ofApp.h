@@ -28,6 +28,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     void save();
+    bool loadMesh(string filename);
 private:
     ofImage _colorImage;
     int _imgWidth, _imgHeight;
