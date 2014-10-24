@@ -14,127 +14,15 @@ void ofApp::setup(){
     _path = "/Users/spherik//Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/home/spherik/Documents/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj";
-    string imageFilename = _path;
     
-    ofStringReplace(imageFilename, "originals", "images");
-    ofStringReplace(imageFilename, ".obj", ".png");
-    
-    _colorImage.loadImage(imageFilename);
-    
-    //Load mesh
-    string fpCoordFilename = _path;
-    string fpTriFilename = _path;
-    _mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-    if(_useRamanan)
+
+    if(!loadMesh(_path))
     {
-        ofStringReplace(fpCoordFilename, "originals", "ramanan2D");
-        ofStringReplace(fpCoordFilename, ".obj", ".dat");
-        
-        ofStringReplace(fpTriFilename, "originals", "ramanan3D");
-        
-        vector<string> splitString = ofSplitString( fpTriFilename, "/");
-        ofStringReplace(fpTriFilename, splitString[splitString.size()-1], "ramanan.tri");
-        ofStringReplace(fpTriFilename, splitString[splitString.size()-2], "");
+        ofExit();
     }
-    else
-    {
-        ofStringReplace(fpCoordFilename, "originals", "ToyFace");
-        ofStringReplace(fpCoordFilename, ".obj", ".dat");
-        
-        ofStringReplace(fpTriFilename, "originals", "ToyFace");
-        
-        vector<string> splitString = ofSplitString( fpTriFilename, "/");
-        ofStringReplace(fpTriFilename, splitString[splitString.size()-1], "ramanan.tri");
-        ofStringReplace(fpTriFilename, splitString[splitString.size()-2], "");
-        cout << fpCoordFilename << endl;
-    }
-    //cout << fpTriFilename << endl;
-    int numRows = 0;
-    int readRows = 0;
-    ifstream fin; //declare a file stream
-    fin.open( ofToDataPath(fpCoordFilename).c_str() ); //open your text file
+    cout << "BBox:" << endl << "* Min: " << bbox.minX << ", " << bbox.minY << endl << "* Max: " << bbox.maxX << ", " << bbox.maxY << endl << "* Center: " << bbox.minX+(bbox.maxX-bbox.minX)/2.0 << ", " << bbox.minY+(bbox.maxY-bbox.minY)<< endl;
     
-    vector<ofVec3f> vertices;
-    vector<ofVec2f> texCoord; //declare a vector of strings to store data
-    vector<ofIndexType> indexs;
-    cout << imageFilename << endl;
-    fin >> numRows;
-    while(readRows < numRows) //as long as theres still text to be read
-    {
-        float x,y,z;
-        ofSpherePrimitive spherePrimitive;
-        spherePrimitive.setRadius(5.0);
-        fin >> x >> y;
-        cout <<"Coord tex:" <<  x << ", " << y << endl;
-        spherePrimitive.setPosition(ofVec3f(1.0*x*_colorImage.width,1.0*y*_colorImage.height,0.0) );
-        vertices.push_back(ofVec3f(1.0*x*_colorImage.width,1.0*y*_colorImage.height,0.0));
-        texCoord.push_back(ofVec2f(1.0*x,1.0*y));
-        _verticesSpheres.push_back(spherePrimitive);
-        
-        bbox.maxX = max(bbox.maxX, x*_colorImage.width);
-        bbox.maxY = max(bbox.maxY, y*_colorImage.height);
-        bbox.minX = min(bbox.minX, x*_colorImage.width);
-        bbox.minY = min(bbox.minY, y*_colorImage.height);
-        readRows++;
-    }
-    fin.close();
-    
-    cout << "I've read " << vertices.size() << "vertices" << endl;
-    _blackMesh.addVertices(vertices);
-    _mesh.addVertices(vertices);
-    _mesh.addTexCoords(texCoord);
-    
-    fin.open( ofToDataPath(fpTriFilename).c_str() ); //open your text file
-    
-    fin >> numRows;
-    while(fin!=NULL) //as long as theres still text to be read
-    {
-        int x,y,z;
-        fin >> x >> y >> z;
-        indexs.push_back(x-1);
-        indexs.push_back(y-1);
-        indexs.push_back(z-1);
-    }
-    fin.close();
-    
-    _mesh.addIndices(indexs);
-    _blackMesh.addIndices(indexs);
-    
-    // Set normals
-    ofEnableNormalizedTexCoords();
-    int nV = _mesh.getNumVertices();
-    int nT = _mesh.getNumIndices()/3;
-    vector<ofPoint> norm(nV);
-    
-    for (int t=0; t<nT; t++) {
-        int i1 = _mesh.getIndex(3*t);
-        int i2 = _mesh.getIndex(3*t+1);
-        int i3 = _mesh.getIndex(3*t+2);
-        
-        const ofPoint &p1 = _mesh.getVertex(i1);
-        const ofPoint &p2 = _mesh.getVertex(i2);
-        const ofPoint &p3 = _mesh.getVertex(i3);
-        
-        ofPoint dir = ((p2 -p1).cross(p3-p1)).normalized();
-        
-        norm[i1] -= dir;
-        norm[i2] -= dir;
-        norm[i3] -= dir;
-    }
-    
-    for (int i = 0; i < nV; i++) {
-        norm[i].normalize();
-        ofVec3f v = _mesh.getVertex(i);
-        v.z += 0.1;
-        _blackMesh.setVertex(i, v);
-    }
-    
-    _mesh.clearNormals();
-    _mesh.addNormals(norm);
-    
-    //printf("%d - %d\n", numRows, _mesh.getNumVertices());
-    //cout << bbox.minX << ", " << bbox.maxX << endl;
-    //cout << bbox.minY << ", " << bbox.maxY << endl;
+    float diagonal = sqrt((bbox.maxX-bbox.minX)*(bbox.maxX-bbox.minX)+(bbox.maxY-bbox.minY)*(bbox.maxY-bbox.minY));
     // Material
     materialColor.setBrightness(250.f);
     //materialColor.setSaturation(200);
@@ -142,11 +30,14 @@ void ofApp::setup(){
     material.setAmbientColor(ofFloatColor(255.f,255.f,255.f,255.f));
     
     // Camera
-    testCam.setupPerspective(true, 60, 1, 1500, ofVec2f(0.0));
-    testCam.setPosition(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,1000.0);
+    float viewAngle = 60.0;
+    double distance = (diagonal/2.0)/sin((viewAngle*(pi/180)/2.0));
+    std::cout << "Diagonal: " << diagonal << ". Distance: " << distance << endl;
+    testCam.setupPerspective(true, viewAngle, 1, distance*1.5, ofVec2f(0.0));
+    testCam.setPosition(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,distance);
     testCam.lookAt(ofVec3f(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,0.0), ofVec3f(0.0,1.0,0.0));
     
-    //cout << "MVP: " << testCam.getModelViewProjectionMatrix() << endl << "------------------------" << endl;
+    cout << "MVP: " << testCam.getModelViewProjectionMatrix() << endl << "------------------------" << endl;
     
     ofEnableDepthTest();
     
@@ -161,6 +52,11 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     
+    
+    //ofTrueTypeFont ttf;
+    //ttf.loadFont("verdana.ttf", 32, true, true, true);
+    ofSetColor(255);
+    ofDrawBitmapString("FPS: "+ ofToString((int) ofGetFrameRate()), 10, 20);
 	testCam.begin(ofGetCurrentViewport());
     
 	// Draw mesh
@@ -375,7 +271,7 @@ void ofApp::save()
     }
     
     ofStringReplace(fpCoordFilename, ".obj", ".dat");
-        cout << "Save Mesh has :" << _mesh.getNumVertices() << endl;
+    cout << "Save Mesh has :" << _mesh.getNumVertices() << endl;
     ofstream fout; //declare a file stream
     fout.open( ofToDataPath(fpCoordFilename).c_str() ); //open your text file
     fout << _mesh.getNumVertices();
@@ -386,4 +282,127 @@ void ofApp::save()
     fout.close();
 }
 
+bool ofApp::loadMesh(string filename)
+{
+    string imageFilename = filename;
+    
+    ofStringReplace(imageFilename, "originals", "images");
+    ofStringReplace(imageFilename, ".obj", ".png");
+    
+    _colorImage.loadImage(imageFilename);
+    
+    //Load mesh
+    string fpCoordFilename = filename;
+    string fpTriFilename = filename;
+    _mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+    if(_useRamanan)
+    {
+        ofStringReplace(fpCoordFilename, "originals", "ramanan2D");
+        ofStringReplace(fpCoordFilename, ".obj", ".dat");
+        
+        ofStringReplace(fpTriFilename, "originals", "ramanan3D");
+        
+        vector<string> splitString = ofSplitString( fpTriFilename, "/");
+        ofStringReplace(fpTriFilename, splitString[splitString.size()-1], "ramanan.tri");
+        ofStringReplace(fpTriFilename, splitString[splitString.size()-2], "");
+    }
+    else
+    {
+        ofStringReplace(fpCoordFilename, "originals", "ToyFace");
+        ofStringReplace(fpCoordFilename, ".obj", ".dat");
+        
+        ofStringReplace(fpTriFilename, "originals", "ToyFace");
+        
+        vector<string> splitString = ofSplitString( fpTriFilename, "/");
+        ofStringReplace(fpTriFilename, splitString[splitString.size()-1], "ramanan.tri");
+        ofStringReplace(fpTriFilename, splitString[splitString.size()-2], "");
+        cout << fpCoordFilename << endl;
+    }
+    //cout << fpTriFilename << endl;
+    int numRows = 0;
+    int readRows = 0;
+    ifstream fin; //declare a file stream
+    fin.open( ofToDataPath(fpCoordFilename).c_str() ); //open your text file
+    
+    vector<ofVec3f> vertices;
+    vector<ofVec2f> texCoord;
+    vector<ofIndexType> indexs;
+    cout << imageFilename << endl;
+    fin >> numRows;
+    while(readRows < numRows) //as long as theres still text to be read
+    {
+        float x,y,z;
+        ofSpherePrimitive spherePrimitive;
+        spherePrimitive.setRadius(5.0);
+        fin >> x >> y;
+        
+        spherePrimitive.setPosition(ofVec3f(1.0*x*_colorImage.width,1.0*y*_colorImage.height,0.0) );
+        vertices.push_back(ofVec3f(1.0*x*_colorImage.width,1.0*y*_colorImage.height,0.0));
+        texCoord.push_back(ofVec2f(1.0*x,1.0*y));
+        _verticesSpheres.push_back(spherePrimitive);
+        
+        bbox.maxX = max(bbox.maxX, x*_colorImage.width);
+        bbox.maxY = max(bbox.maxY, y*_colorImage.height);
+        bbox.minX = min(bbox.minX, x*_colorImage.width);
+        bbox.minY = min(bbox.minY, y*_colorImage.height);
+        readRows++;
+    }
+    fin.close();
+    
+    cout << "I've read " << vertices.size() << "vertices" << endl;
+    _blackMesh.addVertices(vertices);
+    _mesh.addVertices(vertices);
+    _mesh.addTexCoords(texCoord);
+    
+    fin.open( ofToDataPath(fpTriFilename).c_str() ); //open your text file
+    
+    fin >> numRows;
+    while(fin!=NULL) //as long as theres still text to be read
+    {
+        int x,y,z;
+        fin >> x >> y >> z;
+        indexs.push_back(x-1);
+        indexs.push_back(y-1);
+        indexs.push_back(z-1);
+    }
+    fin.close();
+    
+    _mesh.addIndices(indexs);
+    _blackMesh.addIndices(indexs);
+    
+    // Set normals
+    ofEnableNormalizedTexCoords();
+    int nV = _mesh.getNumVertices();
+    int nT = _mesh.getNumIndices()/3;
+    vector<ofPoint> norm(nV);
+    
+    for (int t=0; t<nT; t++) {
+        int i1 = _mesh.getIndex(3*t);
+        int i2 = _mesh.getIndex(3*t+1);
+        int i3 = _mesh.getIndex(3*t+2);
+        
+        const ofPoint &p1 = _mesh.getVertex(i1);
+        const ofPoint &p2 = _mesh.getVertex(i2);
+        const ofPoint &p3 = _mesh.getVertex(i3);
+        
+        ofPoint dir = ((p2 -p1).cross(p3-p1)).normalized();
+        
+        norm[i1] -= dir;
+        norm[i2] -= dir;
+        norm[i3] -= dir;
+    }
+    
+    for (int i = 0; i < nV; i++) {
+        norm[i].normalize();
+        ofVec3f v = _mesh.getVertex(i);
+        v.z += 0.1;
+        _blackMesh.setVertex(i, v);
+    }
+    
+    _mesh.clearNormals();
+    _mesh.addNormals(norm);
+
+    
+    return true;
+}
 
