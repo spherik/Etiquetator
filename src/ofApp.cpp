@@ -15,7 +15,7 @@ void ofApp::setup(){
     //_path = "/home/spherik/Documents/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj";
     
-
+    
     if(!loadMesh(_path))
     {
         ofExit();
@@ -33,13 +33,14 @@ void ofApp::setup(){
     float viewAngle = 60.0;
     double distance = (diagonal/2.0)/sin((viewAngle*(pi/180)/2.0));
     std::cout << "Diagonal: " << diagonal << ". Distance: " << distance << endl;
-    testCam.setupPerspective(true, viewAngle, 1, distance*1.5, ofVec2f(0.0));
+    //testCam.setupPerspective(true, viewAngle, 1, distance*1.5, ofVec2f(0.0));
+    testCam.enableOrtho();
     testCam.setPosition(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,distance);
-    testCam.lookAt(ofVec3f(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,0.0), ofVec3f(0.0,1.0,0.0));
+    testCam.lookAt(ofVec3f(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,0.0), ofVec3f(0.0,-1.0,0.0));
     
     cout << "MVP: " << testCam.getModelViewProjectionMatrix() << endl << "------------------------" << endl;
     
-    ofEnableDepthTest();
+    //ofEnableDepthTest();
     
     cout << "Setup Mesh has :" << _mesh.getNumVertices() << endl;
 }
@@ -57,9 +58,9 @@ void ofApp::draw(){
     //ttf.loadFont("verdana.ttf", 32, true, true, true);
     ofSetColor(255);
     ofDrawBitmapString("FPS: "+ ofToString((int) ofGetFrameRate()), 10, 20);
-	testCam.begin(ofGetCurrentViewport());
+    testCam.begin(ofGetCurrentViewport());
     
-	// Draw mesh
+    // Draw mesh
     material.begin();
     ofSetColor(255,255,255);
     //glPushName(0);
@@ -104,12 +105,12 @@ void ofApp::mouseMoved(int x, int y ){
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-	//cout << "Dragged: " << x << ", " << y << "->";
+    //cout << "Dragged: " << x << ", " << y << " button: " << button << std::endl;
     
-    if(_pickedId>-1)
+    if(_pickedId>-1 && button == 0) // There's something picked and Left button: vertex movement
     {
-    	ofVec3f newPos = testCam.screenToWorld(ofVec3f(x,ofGetHeight()-y,0.999333), ofGetCurrentViewport());
-    	newPos.z = 0.0;
+        ofVec3f newPos = testCam.screenToWorld(ofVec3f(x,ofGetHeight()-y,0.0/*0.999333*/), ofGetCurrentViewport());
+        newPos.z = 0.0;
         //cout << _mesh.getVertex(_pickedId) << " - " << x << ", " << y << endl;
         _mesh.disableTextures();
         _mesh.setTexCoord(_pickedId, ofVec2f(newPos.x/_colorImage.width,newPos.y/_colorImage.height));
@@ -120,11 +121,47 @@ void ofApp::mouseDragged(int x, int y, int button){
         newPos.z = 0.1;
         _blackMesh.setVertex(_pickedId, newPos);
     }
+    else if (button == 1) // Wheel button: pan
+    {
+        ofPoint displacement(x-this->panStart.x,y-this->panStart.y);
+        this->panStart.x = x;
+        this->panStart.y = y;
+        //std::cout << "Dragged Mouse point " << x << ", " << y << ". PanStart: " << displacement.x << ", " << displacement.y << std::endl;
+        testCam.setPosition(testCam.getPosition().x+displacement.x,
+                            testCam.getPosition().y-displacement.y,
+                            testCam.getPosition().z);
+        
+        std::cout << "testCam.setPosition " << testCam.getPosition().x << ", " << testCam.getPosition().y <<  std::endl;
+        
+    }
+    else if (button == 2)   // Right button: zoom
+    {
+        ofPoint displacement(x-this->panStart.x,y-this->panStart.y);
+        
+        
+        //std::cout << "Dragged Mouse point " << x << ", " << y << ". PanStart: " << displacement.x << ", " << displacement.y << std::endl;
+        testCam.setPosition(testCam.getPosition().x,
+                            testCam.getPosition().y,
+                            testCam.getPosition().z-displacement.y);
+        
+        this->panStart.x = x;
+        this->panStart.y = y;
+        
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    _pickedId = glSelect(x,y);
+    if(button == 0) // Left mouse button
+    {
+        _pickedId = glSelect(x,y);
+    }
+    else if (button == 1 || button == 2) // Wheel mouse button
+    {
+        this->panStart.x = x;
+        this->panStart.y = y;
+        //std::cout << "Pressed Mouse point " << x << ", " << y << ". PanStart: " << this->panStart.x << ", " << this->panStart.y << std::endl;
+    }
 }
 
 //--------------------------------------------------------------
@@ -150,36 +187,36 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 // From: http://forum.openframeworks.cc/t/problem-with-picking-objects-in-opengl/2143/5
 int ofApp::glSelect(int x, int y)
 {
-	GLuint buff[512] = {0};
-	GLint hits, view[4];
-	//GLfloat proj_matrixgl[16];
-	ofRectangle viewport = ofGetCurrentViewport();
-	/*
+    GLuint buff[512] = {0};
+    GLint hits, view[4];
+    //GLfloat proj_matrixgl[16];
+    ofRectangle viewport = ofGetCurrentViewport();
+    /*
      This choose the buffer where store the values for the selection data
      */
-	glSelectBuffer(512, buff);
-	/*
+    glSelectBuffer(512, buff);
+    /*
      This retrieves info about the viewport
      */
     glGetIntegerv(GL_VIEWPORT, view);
     //glGetFloatv(GL_PROJECTION_MATRIX, proj_matrixgl);
     
     ofMatrix4x4 proj_matrix = testCam.getProjectionMatrix(viewport);
-	/*
+    /*
      Switching in selecton mode
      */
-	glRenderMode(GL_SELECT);
-	/*
+    glRenderMode(GL_SELECT);
+    /*
      Clearing the names' stack
      This stack contains all the info about the objects
      */
-	glInitNames();
-	/*
+    glInitNames();
+    /*
      Now modify the viewing volume, restricting selection area around the cursor
      */
     
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
     glLoadIdentity();
     /*
      restrict the draw to an area around the cursor
@@ -221,35 +258,35 @@ int ofApp::glSelect(int x, int y)
      get number of objects drawed in that area
      and return to render mode
      */
-	hits = glRenderMode(GL_RENDER);
-	/*
+    hits = glRenderMode(GL_RENDER);
+    /*
      Get nearest object
      */
-	unsigned int j;
-	GLuint *ptr, minZ, minminZ, nearestId = -1, *ptrNames, numberOfNames;
-	//printf ("hits = %d\n", hits);
-	ptr = (GLuint *) buff;
-	minminZ = 0xffffffff;
-	for (int i = 0; i < hits; i++) {
-		numberOfNames = *ptr;
-		ptr++;
-		minZ = *ptr;
-		ptrNames = ptr+2;
-		if(minminZ>minZ && numberOfNames>0){
-			minminZ = minZ;
-			nearestId = ptrNames[0];
-		}
-		/*printf("%d names found:",numberOfNames);
+    unsigned int j;
+    GLuint *ptr, minZ, minminZ, nearestId = -1, *ptrNames, numberOfNames;
+    //printf ("hits = %d\n", hits);
+    ptr = (GLuint *) buff;
+    minminZ = 0xffffffff;
+    for (int i = 0; i < hits; i++) {
+        numberOfNames = *ptr;
+        ptr++;
+        minZ = *ptr;
+        ptrNames = ptr+2;
+        if(minminZ>minZ && numberOfNames>0){
+            minminZ = minZ;
+            nearestId = ptrNames[0];
+        }
+        /*printf("%d names found:",numberOfNames);
          for (j = 0; j < numberOfNames; j++,ptrNames++) {
          printf ("%d ", *ptrNames);
          }
          printf ("\n");*/
-		ptr += numberOfNames+2;
-	}
-	printf("nearest id %d\n",nearestId);
+        ptr += numberOfNames+2;
+    }
+    printf("nearest id %d\n",nearestId);
     
     
-	glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_MODELVIEW);
     /*
      Return nearest object
      */
@@ -262,8 +299,8 @@ void ofApp::save()
     string fpCoordFilename = _path;
     if(_useRamanan)
     {
-    ofStringReplace(fpCoordFilename, "originals", "ramanan2D");
-    
+        ofStringReplace(fpCoordFilename, "originals", "ramanan2D");
+        
     }
     else
     {
@@ -401,7 +438,7 @@ bool ofApp::loadMesh(string filename)
     
     _mesh.clearNormals();
     _mesh.addNormals(norm);
-
+    
     
     return true;
 }

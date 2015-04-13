@@ -39,7 +39,7 @@ private:
     //void list_hits(GLint hits, GLuint *buffer);
     int glSelect(int x, int y);
     vector<ofPoint> findShortestPath(ofPoint, ofPoint);
-    
+    ofPoint panStart;
     ofTexture texColor;
     
     int w, h;
