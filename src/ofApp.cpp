@@ -3,20 +3,47 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     
+    
+    
+    
+    
+    
     bbox.maxX = std::numeric_limits<float>::min();
     bbox.maxY = std::numeric_limits<float>::min();
     bbox.minX = std::numeric_limits<float>::max();
     bbox.minY = std::numeric_limits<float>::max();
     
-    _useRamanan = false;
+    _useRamanan = true;
     
     // Load image
-    _path = "/Users/spherik//Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
+    //_path = "/Users/spherik//Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/home/spherik/Documents/PhD/Bosphorus/originals/bs000/bs000_E_FEAR_0.obj";
     //_path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj";
+    _path = "/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/";
     
+    ofDirectory dir(_path);
+    dir.listDir();
+    std::vector< ofFile > dirs = dir.getFiles();
     
-    if(!loadMesh(_path))
+    for (int i = 0; i <  dirs.size(); i++) {
+        if (dirs.at(i).isDirectory()) {
+            _subjectsList.push_back(dirs.at(i));
+        }
+    }
+    
+    _subjectIdx = 0;
+    _expressionIdx = 0;
+    _subject = _subjectsList[_subjectIdx].getFileName();
+    
+    dir.allowExt("obj");
+    dir.listDir(_path+"/"+_subject);
+    _expressionsList = dir.getFiles();
+    _expression = _expressionsList.at(_expressionIdx).getFileName();
+    
+    std::cout << "Loading " << _path+_subject+"/"+_expression << std::endl;
+    
+    if(!loadMesh(_path+_subject+"/"+_expression))
+        //if(!loadMesh("/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj"))
     {
         ofExit();
     }
@@ -33,16 +60,43 @@ void ofApp::setup(){
     float viewAngle = 60.0;
     double distance = (diagonal/2.0)/sin((viewAngle*(pi/180)/2.0));
     std::cout << "Diagonal: " << diagonal << ". Distance: " << distance << endl;
-    //testCam.setupPerspective(true, viewAngle, 1, distance*1.5, ofVec2f(0.0));
-    testCam.enableOrtho();
+    testCam.setupPerspective(true, viewAngle, 1, distance*1.5, ofVec2f(0.0));
+    //testCam.enableOrtho();
     testCam.setPosition(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,distance);
-    testCam.lookAt(ofVec3f(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,0.0), ofVec3f(0.0,-1.0,0.0));
+    testCam.lookAt(ofVec3f(bbox.minX+(bbox.maxX-bbox.minX)/2.0,bbox.minY+(bbox.maxY-bbox.minY)/2.0,0.0), ofVec3f(0.0,1.0,0.0));
     
     cout << "MVP: " << testCam.getModelViewProjectionMatrix() << endl << "------------------------" << endl;
     
     //ofEnableDepthTest();
     
     cout << "Setup Mesh has :" << _mesh.getNumVertices() << endl;
+    
+    
+    setupUI();
+    
+}
+//--------------------------------------------------------------
+void ofApp::setupUI()
+{
+    string expressionString = ofSplitString(_expression,"_")[2];
+    
+    /*******************************************/
+    gui = new ofxUICanvas();
+    gui->addLabel("SUBJECT", "SUBJECT: "+_subject,  OFX_UI_FONT_LARGE);
+    gui->addSpacer();
+    //gui->addLabel("BUTTONS");
+    gui->addLabelButton("NEXT S.", false);
+    gui->addLabelButton("PREV S.", false);
+    gui->addSpacer();
+    gui->addLabel("EXPRESSION", "EXPRESSION: "+expressionString,  OFX_UI_FONT_LARGE);
+    gui->addLabelButton("NEXT E.", false);
+    gui->addLabelButton("PREV E.", false);
+    gui->addSpacer();
+    
+    gui->autoSizeToFitWidgets();
+    
+    ofAddListener(gui->newGUIEvent,this,&ofApp::guiEvent);
+    /***********************************************/
 }
 
 //--------------------------------------------------------------
@@ -57,7 +111,7 @@ void ofApp::draw(){
     //ofTrueTypeFont ttf;
     //ttf.loadFont("verdana.ttf", 32, true, true, true);
     ofSetColor(255);
-    ofDrawBitmapString("FPS: "+ ofToString((int) ofGetFrameRate()), 10, 20);
+    //ofDrawBitmapString("FPS: "+ ofToString((int) ofGetFrameRate()), 10, 20);
     testCam.begin(ofGetCurrentViewport());
     
     // Draw mesh
@@ -152,15 +206,19 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    if(button == 0) // Left mouse button
+    
+    if(!gui->isHit(x,y))    // We don't want to process gui events http://forum.openframeworks.cc/t/how-to-get-quot-event-capture-quot-with-ofxui/10685/2
     {
-        _pickedId = glSelect(x,y);
-    }
-    else if (button == 1 || button == 2) // Wheel mouse button
-    {
-        this->panStart.x = x;
-        this->panStart.y = y;
-        //std::cout << "Pressed Mouse point " << x << ", " << y << ". PanStart: " << this->panStart.x << ", " << this->panStart.y << std::endl;
+        if(button == 0) // Left mouse button
+        {
+            _pickedId = glSelect(x,y);
+        }
+        else if (button == 1 || button == 2) // Wheel mouse button
+        {
+            this->panStart.x = x;
+            this->panStart.y = y;
+            //std::cout << "Pressed Mouse point " << x << ", " << y << ". PanStart: " << this->panStart.x << ", " << this->panStart.y << std::endl;
+        }
     }
 }
 
@@ -187,6 +245,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 // From: http://forum.openframeworks.cc/t/problem-with-picking-objects-in-opengl/2143/5
 int ofApp::glSelect(int x, int y)
 {
+    
     GLuint buff[512] = {0};
     GLint hits, view[4];
     //GLfloat proj_matrixgl[16];
@@ -293,7 +352,7 @@ int ofApp::glSelect(int x, int y)
     return nearestId;
 }
 
-
+//--------------------------------------------------------------
 void ofApp::save()
 {
     string fpCoordFilename = _path;
@@ -318,7 +377,7 @@ void ofApp::save()
     }
     fout.close();
 }
-
+//--------------------------------------------------------------
 bool ofApp::loadMesh(string filename)
 {
     string imageFilename = filename;
@@ -327,6 +386,17 @@ bool ofApp::loadMesh(string filename)
     ofStringReplace(imageFilename, ".obj", ".png");
     
     _colorImage.loadImage(imageFilename);
+    
+    
+    if(_blackMesh.getVertices().size()>0)
+    {
+        _blackMesh.clear();
+        
+    }
+    /*if(_verticesSpheres.size()>0)
+     {
+     _verticesSpheres.clear();
+     }*/
     
     //Load mesh
     string fpCoordFilename = filename;
@@ -342,6 +412,7 @@ bool ofApp::loadMesh(string filename)
         vector<string> splitString = ofSplitString( fpTriFilename, "/");
         ofStringReplace(fpTriFilename, splitString[splitString.size()-1], "ramanan.tri");
         ofStringReplace(fpTriFilename, splitString[splitString.size()-2], "");
+        cout << fpCoordFilename << endl;
     }
     else
     {
@@ -387,6 +458,7 @@ bool ofApp::loadMesh(string filename)
     fin.close();
     
     cout << "I've read " << vertices.size() << "vertices" << endl;
+    
     _blackMesh.addVertices(vertices);
     _mesh.addVertices(vertices);
     _mesh.addTexCoords(texCoord);
@@ -442,4 +514,72 @@ bool ofApp::loadMesh(string filename)
     
     return true;
 }
-
+//--------------------------------------------------------------
+void ofApp::guiEvent(ofxUIEventArgs &e)
+{
+    bool update = false;
+    string name = e.widget->getName();
+    int kind = e.widget->getKind();
+    
+    if(name == "NEXT S." )
+    {
+        ofxUILabelButton *button = (ofxUILabelButton *) e.widget;
+        
+        if(button->getValue()) // If is pressed
+        {
+            _subjectIdx++;
+            if (_subjectIdx == _subjectsList.size()) {
+                _subjectIdx = 0;
+            }
+            update = true;
+        }
+    }
+    else if(name == "PREV S.")
+    {
+        ofxUILabelButton *button = (ofxUILabelButton *) e.widget;
+        
+        if(button->getValue()) // If is pressed
+        {
+            _subjectIdx--;
+            if(_subjectIdx<0)
+                _subjectIdx = _subjectsList.size()-1;
+            update = true;
+        }
+    }
+    else if(name == "NEXT E.")
+    {
+        ofxUIToggle *toggle = (ofxUIToggle *) e.widget;
+        cout << "value: " << toggle->getValue() << endl;
+    }
+    else if(name == "PREV E.")
+    {
+        ofxUIToggle *toggle = (ofxUIToggle *) e.widget;
+        cout << "value: " << toggle->getValue() << endl;
+    }
+    
+    
+    if(update)
+    {
+        ofDirectory dir;
+        
+        // Update subject info on GUI
+        _subject = _subjectsList[_subjectIdx].getFileName();
+        ((ofxUILabel*)gui->getWidget("SUBJECT"))->setLabel("SUBJECT: "+_subject);
+        
+        
+        // Update expression info on GUI
+        dir.allowExt("obj");
+        dir.listDir(_path+"/"+_subject);
+        _expressionsList = dir.getFiles();
+        _expression = _expressionsList[_expressionIdx].getFileName();
+        ((ofxUILabel*)gui->getWidget("EXPRESSION"))->setLabel("EXPRESSION: "+_expression);
+        
+        if(!loadMesh(_path+"/"+_subject+"/"+_expression))
+            //if(!loadMesh("/Volumes/Dades/spherik/Documents/WORK/PhD/Bosphorus/originals/bs000/bs000_E_ANGER_0.obj"))
+        {
+            ofExit();
+        }
+        
+    }
+    
+}

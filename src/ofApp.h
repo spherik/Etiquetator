@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxUI.h"
 #include <fstream>
 
 typedef struct
@@ -33,7 +34,15 @@ private:
     ofImage _colorImage;
     int _imgWidth, _imgHeight;
     int _pickedId;
-    string _path;
+    
+    
+    string _path, _subject, _expression;
+    int _subjectIdx, _expressionIdx;
+    std::vector<ofFile> _subjectsList, _expressionsList;
+    
+    
+    
+    
     ofMesh _mesh,_blackMesh;
     vector<ofSpherePrimitive> _verticesSpheres;
     //void list_hits(GLint hits, GLuint *buffer);
@@ -51,4 +60,9 @@ private:
     ofCamera testCam;
 
     bool _useRamanan;
+    
+    void setupUI();
+    
+    ofxUICanvas *gui;
+    void guiEvent(ofxUIEventArgs &e);
 };

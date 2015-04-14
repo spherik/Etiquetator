@@ -1,2 +1,5 @@
 ofx3DModelLoader
 ofxAssimpModelLoader
+ofXmlSettings
+ofxUI
+
