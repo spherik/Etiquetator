@@ -7,6 +7,7 @@ Etiquetator is a program to set feature points (mesh) onto a mesh. It's based on
 * Openframeworks (tested on 0.8.3 on MacOs and Ubuntu) http://openframeworks.cc/download/ 
 * ofxUI: https://github.com/rezaali/ofxUI
 * ofxXmlSettings
+
 ### Development
 
 Setup:
